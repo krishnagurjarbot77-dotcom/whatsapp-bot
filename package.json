@@ -1,0 +1,14 @@
+{
+  "name": "whatsapp-gemini-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot integrated with Gemini AI using Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "qrcode-terminal": "latest",
+    "whatsapp-web.js": "latest"
+  }
+}
