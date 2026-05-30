@@ -1,15 +1,14 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { Client, LocalAuth } = require('whatsapp-web.js');
+import qrcode from 'qrcode'; // QR code image ke liye
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import chromium from '@sparticuz/chromium';
 import express from 'express';
 
 const app = express();
+const port = process.env.PORT || 3000;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Tumhara admin number
-const ADMIN_NUMBER = '918619986957@c.us'; 
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -20,37 +19,34 @@ const client = new Client({
     }
 });
 
-client.on('message', async (msg) => {
-    const chat = await msg.getChat();
-    const contact = await msg.getContact();
+// QR Code storage
+let qrData = '';
 
-    // 1. ADMIN COMMANDS (Sirf tumhare liye)
-    if (msg.from === ADMIN_NUMBER) {
-        if (msg.body.startsWith('/set_tone')) {
-            // Yahan se tum bot ka tone change karoge
-            const newTone = msg.body.replace('/set_tone ', '');
-            process.env.AI_TONE = newTone;
-            msg.reply('Admin, tone update ho gaya hai: ' + newTone);
-            return;
-        }
+// Web server setup: Ye wala part 'Cannot GET /' error ko fix karega
+app.get('/', (req, res) => {
+    if (qrData) {
+        qrcode.toDataURL(qrData, (err, url) => {
+            res.send(`<h1>Scan this QR to connect Bot</h1><img src="${url}">`);
+        });
+    } else {
+        res.send('Bot shuru ho raha hai, zara rukie...');
     }
+});
 
-    // 2. DIRECT AI REPLY (Bina !ai prefix ke)
-    // Agar tum chaho ki bot sirf tumhare aur bacchon ke message ka jawab de
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-pro",
-        // System instructions: AI Teacher ka persona
-        generationConfig: {
-            candidateCount: 1,
-            maxOutputTokens: 200,
-        }
-    });
+client.on('qr', (qr) => {
+    qrData = qr; // QR data save kar liya
+    console.log('--- QR CODE READY ---');
+});
 
-    const prompt = `Tum ek friendly school teacher ho. ${process.env.AI_TONE || 'Bachon se dosti se baat karo'}. Sawal: ${msg.body}`;
-    
-    const result = await model.generateContent(prompt);
-    msg.reply(result.response.text());
+client.on('ready', () => console.log('Bot is ready!'));
+
+client.on('message', async (msg) => {
+    if (msg.body.startsWith('!ai')) {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(msg.body.slice(4));
+        msg.reply(result.response.text());
+    }
 });
 
 client.initialize();
-app.listen(process.env.PORT || 3000);
+app.listen(port, () => console.log(`Server running on port ${port}`));
