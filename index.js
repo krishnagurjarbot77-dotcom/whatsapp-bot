@@ -4,16 +4,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const chromium = require('@sparticuz/chromium');
 const express = require('express');
 
-// 1. Render ke liye Web Server (taaki bot crash na ho)
+// 1. Render ko active rakhne ke liye Web Server
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('Bot is live and running!'));
 app.listen(port, () => console.log(`Server listening on port ${port}`));
 
-// 2. Gemini AI Setup
+// 2. AI aur Client Setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// 3. Bot Client Setup
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -23,6 +21,7 @@ const client = new Client({
     }
 });
 
+// 3. QR Code Generator
 client.on('qr', (qr) => {
     console.log('--- SCAN THIS QR CODE ---');
     qrcode.generate(qr, { small: true });
@@ -32,9 +31,8 @@ client.on('ready', () => {
     console.log('Bot is ready and online!');
 });
 
-// 4. Message Handler
+// 4. Message Handling
 client.on('message', async (msg) => {
-    // Sirf !ai se shuru hone wale message ka jawab dega
     if (msg.body.startsWith('!ai')) {
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -43,8 +41,8 @@ client.on('message', async (msg) => {
             const response = await result.response;
             msg.reply(response.text());
         } catch (error) {
-            console.error(error);
-            msg.reply("Sorry, main abhi jawab nahi de pa raha.");
+            console.log(error);
+            msg.reply("Error: Main abhi jawab nahi de pa raha.");
         }
     }
 });
