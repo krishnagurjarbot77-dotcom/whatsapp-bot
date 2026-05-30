@@ -1,9 +1,16 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// Ab hum 'require' use kar sakte hain un libraries ke liye jo CommonJS hain
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+
+// Baki libraries ko 'import' ke saath rakho
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import chromium from '@sparticuz/chromium';
 import express from 'express';
 
+// Server Setup
 const app = express();
 app.get('/', (req, res) => res.send('Bot is live!'));
 app.listen(process.env.PORT || 3000);
