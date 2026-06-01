@@ -1,17 +1,19 @@
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pino = require('pino');
+const fs = require('fs');
 
-// Tumhari API key yahan set hai
+// Tumhari API Key
 const genAI = new GoogleGenerativeAI("AIzaSyBwP3gJ-YyFm1d9tO4j-Kq4kM5pX6_zYwA");
 
-async function connectToWhatsApp() {
+async function startBot() {
+    // Auth state save karne ke liye folder
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
     
-    const sock = makeWASocket({
-        logger: pino({ level: 'silent' }),
+    const sock = makeWASocket({ 
+        logger: pino({ level: 'silent' }), 
         auth: state,
-        printQRInTerminal: true
+        printQRInTerminal: true 
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -19,10 +21,12 @@ async function connectToWhatsApp() {
     sock.ev.on('connection.update', (update) => {
         const { connection, qr } = update;
         if (qr) {
-            console.log('QR Code generated, please scan!');
+            console.log('QR Code generated! Scan it from WhatsApp.');
         }
         if (connection === 'open') {
             console.log('--- AI TEACHER IS LIVE ---');
+        } else if (connection === 'close') {
+            startBot(); // Reconnect if closed
         }
     });
 
@@ -34,14 +38,16 @@ async function connectToWhatsApp() {
         
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-            const prompt = `Tum ek smart school AI teacher ho. Humesha HINGLISH mein jawab do aur simple words use karo. User: ${text}`;
+            const prompt = `Tum ek expert school teacher ho. Humesha HINGLISH mein jawab do. Sawal: ${text}`;
             
             const result = await model.generateContent(prompt);
-            await sock.sendMessage(msg.key.remoteJid, { text: result.response.text() });
+            const responseText = result.response.text();
+            
+            await sock.sendMessage(msg.key.remoteJid, { text: responseText });
         } catch (err) {
             console.error("AI Error:", err);
         }
     });
 }
 
-connectToWhatsApp();
+startBot();
