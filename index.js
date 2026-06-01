@@ -1,13 +1,10 @@
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pino = require('pino');
-const fs = require('fs');
 
-// Tumhari API Key
 const genAI = new GoogleGenerativeAI("AIzaSyBwP3gJ-YyFm1d9tO4j-Kq4kM5pX6_zYwA");
 
 async function startBot() {
-    // Auth state save karne ke liye folder
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
     
     const sock = makeWASocket({ 
@@ -26,7 +23,7 @@ async function startBot() {
         if (connection === 'open') {
             console.log('--- AI TEACHER IS LIVE ---');
         } else if (connection === 'close') {
-            startBot(); // Reconnect if closed
+            startBot(); 
         }
     });
 
